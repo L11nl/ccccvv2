@@ -1,0 +1,134 @@
+
+here<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>NAS - نظام الاشتراكات</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+
+<body class="bg-gray-100 p-4">
+
+<div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-4">
+  <h1 class="text-2xl font-bold text-center mb-4">NAS - نظام الدفع</h1>
+
+  <input id="name" placeholder="اسم الزبون" class="input">
+  <input id="phone" placeholder="رقم الزبون" class="input">
+  <input id="username" placeholder="يوزر نيم (اختياري)" class="input">
+  <input id="link" placeholder="رابط الزبون" class="input">
+
+  <div class="grid grid-cols-3 gap-2 my-3">
+    <button onclick="setPeriod(1)" class="btn">شهر</button>
+    <button onclick="setPeriod(2)" class="btn">شهرين</button>
+    <button onclick="setPeriod(3)" class="btn">3 أشهر</button>
+    <button onclick="setPeriod(6)" class="btn">6 أشهر</button>
+    <button onclick="setPeriod(12)" class="btn col-span-2">سنة</button>
+  </div>
+
+  <button onclick="togglePaid()" id="paidBtn" class="w-full bg-red-500 text-white py-2 rounded-lg mb-3">
+    غير مدفوع
+  </button>
+
+  <button onclick="generateCard()" class="w-full bg-black text-white py-2 rounded-lg">
+    حفظ الزبون
+  </button>
+</div>
+
+<!-- بطاقة الصورة -->
+<div id="card" class="hidden p-4 max-w-md mx-auto bg-white mt-6 rounded-xl shadow-lg">
+  <h2 class="text-xl font-bold text-center">NAS</h2>
+  <p id="c_name"></p>
+  <p id="c_phone"></p>
+  <p id="c_user"></p>
+  <p id="c_link"></p>
+  <p id="c_status"></p>
+  <p id="c_start"></p>
+  <p id="c_end"></p>
+  <hr class="my-2">
+  <p>📞 07726744162</p>
+  <p>📷 @l11nl</p>
+</div>
+
+<div id="actions" class="hidden max-w-md mx-auto mt-3 grid grid-cols-2 gap-2">
+  <button onclick="saveImage()" class="bg-green-600 text-white py-2 rounded-lg">حفظ الصورة</button>
+  <button onclick="shareImage()" class="bg-blue-600 text-white py-2 rounded-lg">مشاركة الصورة</button>
+</div>
+
+<style>
+.input{
+  width:100%;
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:8px;
+  margin-bottom:8px;
+}
+.btn{
+  background:#e5e7eb;
+  padding:6px;
+  border-radius:8px;
+}
+</style>
+
+<script>
+let months = 0;
+let paid = false;
+let imgBlob;
+
+function setPeriod(m){
+  months = m;
+  alert("تم اختيار " + m + " شهر");
+}
+
+function togglePaid(){
+  paid = !paid;
+  const btn = document.getElementById("paidBtn");
+  btn.textContent = paid ? "مدفوع" : "غير مدفوع";
+  btn.className = paid
+    ? "w-full bg-green-600 text-white py-2 rounded-lg mb-3"
+    : "w-full bg-red-500 text-white py-2 rounded-lg mb-3";
+}
+
+function generateCard(){
+  const start = new Date();
+  const end = new Date();
+  end.setMonth(end.getMonth() + months);
+
+  document.getElementById("c_name").textContent = "👤 الاسم: " + name.value;
+  document.getElementById("c_phone").textContent = "📱 الرقم: " + phone.value;
+  document.getElementById("c_user").textContent = "🆔 اليوزر: " + username.value;
+  document.getElementById("c_link").textContent = "🔗 الرابط: " + link.value;
+  document.getElementById("c_status").textContent = paid ? "✅ مدفوع" : "❌ غير مدفوع";
+  document.getElementById("c_start").textContent = "📅 البداية: " + start.toLocaleDateString();
+  document.getElementById("c_end").textContent = "⏳ الانتهاء: " + end.toLocaleDateString();
+
+  card.classList.remove("hidden");
+  actions.classList.remove("hidden");
+}
+
+function saveImage(){
+  html2canvas(card).then(canvas=>{
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL();
+    a.download = "NAS.png";
+    a.click();
+  });
+}
+
+function shareImage(){
+  html2canvas(card).then(canvas=>{
+    canvas.toBlob(blob=>{
+      const file = new File([blob],"NAS.png",{type:"image/png"});
+      navigator.share({
+        files:[file],
+        title:"NAS",
+        text:"تفاصيل اشتراكك من متجر NAS"
+      });
+    });
+  });
+}
+</script>
+
+</body>
+</html>
