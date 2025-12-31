@@ -1,134 +1,218 @@
-
-here<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>NAS - نظام الاشتراكات</title>
+<title>NAS | إدارة الاشتراكات</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+body{font-family:'Cairo',sans-serif}
+.card3d{transition:.4s}
+.card3d:hover{transform:scale(1.02)}
+.toast{
+ position:fixed;top:10px;left:50%;
+ transform:translateX(-50%);
+ background:#111;color:#fff;
+ padding:10px 20px;border-radius:10px;
+ z-index:9999
+}
+</style>
 </head>
 
-<body class="bg-gray-100 p-4">
+<body class="bg-gradient-to-br from-gray-900 to-black text-white min-h-screen p-4">
 
-<div class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-4">
-  <h1 class="text-2xl font-bold text-center mb-4">NAS - نظام الدفع</h1>
+<h1 class="text-3xl font-bold text-center mb-4">NAS - نظام الاشتراكات</h1>
 
+<div id="toast" class="hidden toast"></div>
+
+<!-- الإحصائيات -->
+<div class="flex justify-center gap-4 mb-4">
+  <div id="paidCount"></div>
+  <div id="expiredCount"></div>
+</div>
+
+<!-- فورم -->
+<div class="max-w-md mx-auto bg-gray-800 p-4 rounded-xl shadow-xl card3d">
   <input id="name" placeholder="اسم الزبون" class="input">
   <input id="phone" placeholder="رقم الزبون" class="input">
-  <input id="username" placeholder="يوزر نيم (اختياري)" class="input">
+  <input id="service" placeholder="نوع الاشتراك (مثال: Canva Pro)" class="input">
+  <input id="username" placeholder="يوزر (اختياري)" class="input">
   <input id="link" placeholder="رابط الزبون" class="input">
 
   <div class="grid grid-cols-3 gap-2 my-3">
-    <button onclick="setPeriod(1)" class="btn">شهر</button>
-    <button onclick="setPeriod(2)" class="btn">شهرين</button>
-    <button onclick="setPeriod(3)" class="btn">3 أشهر</button>
-    <button onclick="setPeriod(6)" class="btn">6 أشهر</button>
-    <button onclick="setPeriod(12)" class="btn col-span-2">سنة</button>
+    <button onclick="setDays(7)">أسبوعي</button>
+    <button onclick="setDays(30)">شهري</button>
+    <button onclick="setDays(90)">3 أشهر</button>
+    <button onclick="setDays(180)">6 أشهر</button>
+    <button onclick="setDays(365)" class="col-span-3">سنوي</button>
   </div>
 
-  <button onclick="togglePaid()" id="paidBtn" class="w-full bg-red-500 text-white py-2 rounded-lg mb-3">
-    غير مدفوع
-  </button>
+  <div class="flex gap-2">
+    <button onclick="setPaid(true)" class="flex-1 bg-green-600 py-2 rounded">مدفوع</button>
+    <button onclick="setPaid(false)" class="flex-1 bg-red-600 py-2 rounded">غير مدفوع</button>
+  </div>
 
-  <button onclick="generateCard()" class="w-full bg-black text-white py-2 rounded-lg">
+  <button onclick="saveClient()" class="w-full bg-white text-black mt-3 py-2 rounded font-bold">
     حفظ الزبون
   </button>
 </div>
 
-<!-- بطاقة الصورة -->
-<div id="card" class="hidden p-4 max-w-md mx-auto bg-white mt-6 rounded-xl shadow-lg">
-  <h2 class="text-xl font-bold text-center">NAS</h2>
-  <p id="c_name"></p>
-  <p id="c_phone"></p>
-  <p id="c_user"></p>
-  <p id="c_link"></p>
-  <p id="c_status"></p>
-  <p id="c_start"></p>
-  <p id="c_end"></p>
-  <hr class="my-2">
-  <p>📞 07726744162</p>
-  <p>📷 @l11nl</p>
+<!-- البحث -->
+<div class="max-w-md mx-auto mt-4">
+  <input id="search" oninput="render()" placeholder="🔍 بحث بالاسم أو الرقم أو الرابط"
+   class="w-full p-2 rounded text-black">
 </div>
 
-<div id="actions" class="hidden max-w-md mx-auto mt-3 grid grid-cols-2 gap-2">
-  <button onclick="saveImage()" class="bg-green-600 text-white py-2 rounded-lg">حفظ الصورة</button>
-  <button onclick="shareImage()" class="bg-blue-600 text-white py-2 rounded-lg">مشاركة الصورة</button>
-</div>
+<!-- قائمة -->
+<div class="max-w-md mx-auto mt-4" id="clients"></div>
 
-<style>
-.input{
-  width:100%;
-  border:1px solid #ccc;
-  border-radius:8px;
-  padding:8px;
-  margin-bottom:8px;
-}
-.btn{
-  background:#e5e7eb;
-  padding:6px;
-  border-radius:8px;
-}
-</style>
+<!-- بطاقة -->
+<div id="card" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4">
+  <div id="cardContent" class="bg-white text-black p-4 rounded-xl w-full max-w-sm">
+    <h2 class="text-xl font-bold text-center">NAS</h2>
+    <div id="cardInfo"></div>
+    <hr class="my-2">
+    <p>📞 07726744162</p>
+    <p>📷 <a href="https://www.instagram.com/l11nl?igsh=YnF0bTU4MXAyamZ3">@l11nl</a></p>
+    <div class="flex gap-2 mt-3">
+      <button onclick="saveImage()" class="flex-1 bg-green-600 text-white py-2 rounded">حفظ</button>
+      <button onclick="shareImage()" class="flex-1 bg-blue-600 text-white py-2 rounded">مشاركة</button>
+      <button onclick="closeCard()" class="flex-1 bg-gray-500 text-white py-2 rounded">إغلاق</button>
+    </div>
+  </div>
+</div>
 
 <script>
-let months = 0;
-let paid = false;
-let imgBlob;
+let days=0, paid=false, editIndex=null;
+let clients=JSON.parse(localStorage.getItem("clients")||"[]");
 
-function setPeriod(m){
-  months = m;
-  alert("تم اختيار " + m + " شهر");
+function toast(msg){
+ const t=document.getElementById("toast");
+ t.textContent=msg; t.classList.remove("hidden");
+ setTimeout(()=>t.classList.add("hidden"),4000);
 }
 
-function togglePaid(){
-  paid = !paid;
-  const btn = document.getElementById("paidBtn");
-  btn.textContent = paid ? "مدفوع" : "غير مدفوع";
-  btn.className = paid
-    ? "w-full bg-green-600 text-white py-2 rounded-lg mb-3"
-    : "w-full bg-red-500 text-white py-2 rounded-lg mb-3";
+function setDays(d){days=d}
+function setPaid(p){paid=p}
+
+function saveClient(){
+ const start=new Date();
+ const end=new Date(start); end.setDate(end.getDate()+days);
+
+ const data={
+  name:name.value, phone:phone.value,
+  service:service.value,
+  user:username.value, link:link.value,
+  paid, start:start.toISOString(), end:end.toISOString()
+ };
+
+ if(editIndex!==null){clients[editIndex]=data; editIndex=null;}
+ else clients.push(data);
+
+ localStorage.setItem("clients",JSON.stringify(clients));
+ render();
 }
 
-function generateCard(){
-  const start = new Date();
-  const end = new Date();
-  end.setMonth(end.getMonth() + months);
+function render(){
+ const q=(search.value||"").toLowerCase();
+ const list=document.getElementById("clients");
+ list.innerHTML="";
+ let paidC=0, expC=0;
+ const now=new Date();
 
-  document.getElementById("c_name").textContent = "👤 الاسم: " + name.value;
-  document.getElementById("c_phone").textContent = "📱 الرقم: " + phone.value;
-  document.getElementById("c_user").textContent = "🆔 اليوزر: " + username.value;
-  document.getElementById("c_link").textContent = "🔗 الرابط: " + link.value;
-  document.getElementById("c_status").textContent = paid ? "✅ مدفوع" : "❌ غير مدفوع";
-  document.getElementById("c_start").textContent = "📅 البداية: " + start.toLocaleDateString();
-  document.getElementById("c_end").textContent = "⏳ الانتهاء: " + end.toLocaleDateString();
+ clients.forEach((c,i)=>{
+  const end=new Date(c.end);
+  const diff=(end-now)/(1000*60*60*24);
+  if(c.paid) paidC++;
+  if(diff<0) expC++;
+  if(diff<0) toast(`⚠️ اشتراك منتهي: ${c.name}`);
+  else if(diff<=3) toast(`⏰ قرب انتهاء اشتراك: ${c.name}`);
 
-  card.classList.remove("hidden");
-  actions.classList.remove("hidden");
+  if(
+   c.name.toLowerCase().includes(q)||
+   c.phone.includes(q)||
+   c.link.toLowerCase().includes(q)
+  ){
+   list.innerHTML+=`
+   <div class="bg-gray-800 p-3 rounded mb-2 card3d">
+    <div onclick="openCard(${i})" class="cursor-pointer">
+     ${diff<0?"⭐":""} 👤 ${c.name} - ${c.service}
+    </div>
+    <div class="flex gap-2 mt-2">
+     <button onclick="edit(${i})">✏️</button>
+     <button onclick="del(${i})">🗑️</button>
+    </div>
+   </div>`;
+  }
+ });
+
+ paidCount.textContent=`✅ مدفوع: ${paidC}`;
+ expiredCount.textContent=`⭐ منتهي: ${expC}`;
 }
+
+function edit(i){
+ const c=clients[i];
+ name.value=c.name; phone.value=c.phone;
+ service.value=c.service;
+ username.value=c.user; link.value=c.link;
+ paid=c.paid; editIndex=i;
+}
+
+function del(i){
+ if(confirm("حذف الزبون؟")){
+  clients.splice(i,1);
+  localStorage.setItem("clients",JSON.stringify(clients));
+  render();
+ }
+}
+
+function openCard(i){
+ const c=clients[i];
+ cardInfo.innerHTML=`
+ <p>👤 ${c.name}</p>
+ <p>📱 ${c.phone}</p>
+ <p>💼 ${c.service}</p>
+ <p>🔗 ${c.link}</p>
+ <p>${c.paid?"✅ مدفوع":"❌ غير مدفوع"}</p>
+ <p>📅 ${new Date(c.start).toLocaleDateString("ar")}</p>
+ <p>⏳ ${new Date(c.end).toLocaleDateString("ar")}</p>`;
+ card.classList.remove("hidden");
+}
+
+function closeCard(){card.classList.add("hidden")}
 
 function saveImage(){
-  html2canvas(card).then(canvas=>{
-    const a = document.createElement("a");
-    a.href = canvas.toDataURL();
-    a.download = "NAS.png";
-    a.click();
-  });
+ html2canvas(cardContent).then(c=>{
+  const a=document.createElement("a");
+  a.href=c.toDataURL(); a.download="NAS.png"; a.click();
+ });
 }
 
 function shareImage(){
-  html2canvas(card).then(canvas=>{
-    canvas.toBlob(blob=>{
-      const file = new File([blob],"NAS.png",{type:"image/png"});
-      navigator.share({
-        files:[file],
-        title:"NAS",
-        text:"تفاصيل اشتراكك من متجر NAS"
-      });
-    });
+ html2canvas(cardContent).then(c=>{
+  c.toBlob(b=>{
+   navigator.share({
+    files:[new File([b],"NAS.png",{type:"image/png"})],
+    title:"NAS",
+    text:"تفاصيل اشتراكك"
+   });
   });
+ });
 }
+
+render();
 </script>
+
+<style>
+.input{
+ width:100%;margin-bottom:8px;
+ padding:8px;border-radius:8px;color:black
+}
+button{background:#444;padding:4px 8px;border-radius:6px}
+</style>
 
 </body>
 </html>
